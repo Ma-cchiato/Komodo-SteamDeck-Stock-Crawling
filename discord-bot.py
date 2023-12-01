@@ -14,7 +14,7 @@ bot = commands.Bot(command_prefix="?", intents=intents)
 url = "https://steamdeck.komodo.jp/?lang=ko"
 
 # 파일 경로 및 파일 이름 설정
-CHANNEL_ID_FILE = "channel_id.json"
+#CHANNEL_ID_FILE = "channel_id.json"
 PREVIOUS_MESSAGE_FILE = "previous_message.json"
 
 product_mapping = {
@@ -31,17 +31,17 @@ check_active = False
 
 
 # 채널 아이디를 저장하고 불러오는 함수 정의
-def save_channel_id(channel_id):
-  with open(CHANNEL_ID_FILE, "w") as file:
-    json.dump({"channel_id": channel_id}, file)
+#def save_channel_id(channel_id):
+#  with open(CHANNEL_ID_FILE, "w") as file:
+#    json.dump({"channel_id": channel_id}, file)
 
 
-def load_channel_id():
-  if os.path.exists(CHANNEL_ID_FILE):
-    with open(CHANNEL_ID_FILE, "r") as file:
-      data = json.load(file)
-      return data.get("channel_id")
-  return None
+#def load_channel_id():
+#  if os.path.exists(CHANNEL_ID_FILE):
+#    with open(CHANNEL_ID_FILE, "r") as file:
+#      data = json.load(file)
+#      return data.get("channel_id")
+#  return None
 
 
 def save_previous_message(message):
@@ -182,18 +182,18 @@ async def handle_alarm_command(ctx, *args):
     await ctx.send(error_message)
 
 
-@bot.command(name='setchannel', aliases=['채널설정'])
-async def handle_setchannel_command(ctx):
-  global DISCORD_CHANNEL_ID
+#@bot.command(name='setchannel', aliases=['채널설정'])
+#async def handle_setchannel_command(ctx):
+#  global DISCORD_CHANNEL_ID
 
-  current_channel_id = load_channel_id()
+#  current_channel_id = load_channel_id()
 
-  if current_channel_id:
-    await ctx.send(f'현재 채널이 이미 설정되어 있습니다. 현재 채널 아이디: {current_channel_id}')
-  else:
-    DISCORD_CHANNEL_ID = ctx.channel.id
-    save_channel_id(DISCORD_CHANNEL_ID)
-    await ctx.send(f'채널이 {ctx.channel.mention}로 설정되었습니다.')
+#  if current_channel_id:
+#    await ctx.send(f'현재 채널이 이미 설정되어 있습니다. 현재 채널 아이디: {current_channel_id}')
+#  else:
+#    DISCORD_CHANNEL_ID = ctx.channel.id
+#    save_channel_id(DISCORD_CHANNEL_ID)
+#    await ctx.send(f'채널이 {ctx.channel.mention}로 설정되었습니다.')
 
 
 @bot.event
