@@ -114,7 +114,7 @@ async def check_availability_periodic(server_guid):
         await asyncio.sleep(30)
 
 # 함수: 재고 확인
-async def check_availability(server_guid, channel, send_message=True):  # 수정된 부분
+async def check_availability(server_guid, channel, send_message=True):
     try:
         print(f"Check availability called for server {server_guid}")
         user_agent = UserAgent()
@@ -126,32 +126,27 @@ async def check_availability(server_guid, channel, send_message=True):  # 수정
         response = requests.get(url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        product_items = soup.find_all(
-            "li",
-            class_=[
-                "variation-item card-full-invoice show",
-                "variation-item card-full-invoice sold-out show"
-            ])
+        # 'variation-item card-full-invoice show' 클래스를 가진 'li' 태그들을 찾습니다.
+        stock_items = soup.find_all("li", class_="variation-item card-full-invoice show")
 
         availability_messages = []
 
-        for item in product_items:
+        for item in stock_items:
             item_id = item.get('id')
-
-            if "sold-out" in item.get('class'):
-                availability_messages.append(f"{product_mapping[item_id]}: 재고없음")
-            else:
-                availability_messages.append(f"{product_mapping[item_id]}: 재고있음")
+            product_name = product_mapping.get(item_id, "Unknown Product")
+            is_sold_out = item.find("div", class_="new-soldout-ribbon") is not None
+            stock_status = '품절' if is_sold_out else '재고있음'
+            availability_messages.append(f"{product_name}: {stock_status}")
 
         combined_message = "\n".join(availability_messages)
 
-        if send_message and channel:  # 수정된 부분
+        if send_message and channel:
             await channel.send(combined_message)
 
         previous_message = await load_previous_message(server_guid)
         print(combined_message)
         print(previous_message)
-        if previous_message != combined_message and channel:  # 수정된 부분
+        if previous_message != combined_message and channel:
             await channel.send("재고가 변경되었습니다!!!")
             await channel.send(combined_message)
             await save_previous_message(server_guid, combined_message)
