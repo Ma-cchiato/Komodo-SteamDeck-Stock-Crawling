@@ -96,8 +96,12 @@ async def handle_alarm_command(ctx,
             update_server_status(server_guid, alarm_active=True, last_channel_id=ctx.channel.id)
             await ctx.respond("재고 알람이 활성화되었습니다.")
             print(f"서버 {server_guid}에서 알람이 활성화되었습니다.")
+
+            if any(status.get('alarm_active') for status in load_server_status().values()):
+                await bot.change_presence(status=discord.Status.online, activity=discord.Game("재고 조회"))
+
             # 태스크가 이미 실행 중인지 확인하고, 실행 중이지 않으면 태스크 시작
-            if 'check_availability_task' not in globals() or check_availability_task.done():
+            if check_availability_task is None or check_availability_task.done():
                 check_availability_task = asyncio.create_task(check_availability_periodic())
 
         elif mode == '비활성화':
