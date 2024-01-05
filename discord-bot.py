@@ -230,9 +230,6 @@ async def on_disconnect():
     print(f"We have been disconnected.")
     for guild in bot.guilds:
         server_guid = str(guild.id)
-        server_status = load_server_status()
-        server_info = server_status.get(server_guid, {})
-        if server_info.get('alarm_active'):
-            save_alarm_status(server_guid, False)
+        update_server_status(server_guid, alarm_active=False)
 
 bot.run(DISCORD_BOT_TOKEN)
