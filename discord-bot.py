@@ -33,7 +33,7 @@ def load_server_status():
 
 def save_server_status(server_status):
     with open('server_status.json', 'w') as file:
-        json.dump(server_status, file)
+        json.dump(server_status, file, indent=4)
 
 def load_previous_message(server_guid):
     server_status = load_server_status()
