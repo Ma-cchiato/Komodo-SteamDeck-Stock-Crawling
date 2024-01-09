@@ -117,40 +117,51 @@ async def handle_alarm_command(ctx,
 # 주기적 재고 확인 함수
 async def check_availability_periodic():
     while True:
-        # 서버 상태 확인하여 알람 활성화된 서버가 있는지 검사
-        server_status = load_server_status()
-        if not any(status.get('alarm_active') for status in server_status.values()):
-            break
+        try:
+            # 서버 상태 확인하여 알람 활성화된 서버가 있는지 검사
+            server_status = load_server_status()
+            if not any(status.get('alarm_active') for status in server_status.values()):
+                break
 
-        user_agent = UserAgent()
-        headers = {"User-Agent": user_agent.random, 'Cache-Control': 'no-cache'}
-        response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        stock_items = soup.find_all("li", class_="variation-item card-full-invoice show")
+            user_agent = UserAgent()
+            headers = {"User-Agent": user_agent.random, 'Cache-Control': 'no-cache'}
+            response = requests.get(url, headers=headers)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            stock_items = soup.find_all("li", class_="variation-item card-full-invoice show")
 
-        availability_messages = []
-        for item in stock_items:
-            item_id = item.get('id')
-            product_name = product_mapping.get(item_id, "Unknown Product")
-            is_sold_out = item.find("div", class_="new-soldout-ribbon") is not None
-            stock_status = '품절' if is_sold_out else '재고있음'
-            availability_messages.append(f"{product_name}: {stock_status}")
+            availability_messages = []
+            for item in stock_items:
+                item_id = item.get('id')
+                product_name = product_mapping.get(item_id, "Unknown Product")
+                is_sold_out = item.find("div", class_="new-soldout-ribbon") is not None
+                stock_status = '품절' if is_sold_out else '재고있음'
+                availability_messages.append(f"{product_name}: {stock_status}")
 
-        combined_message = "\n".join(availability_messages)
+            combined_message = "\n".join(availability_messages)
 
-        for server_id, status in server_status.items():
-            if status.get('alarm_active'):
-                channel_id = status.get('last_channel_id')
-                previous_message = status.get('previous_message', '')
-                if channel_id and previous_message != combined_message:
-                    channel = bot.get_channel(int(channel_id))
-                    if channel:
-                        await channel.send(combined_message)
-                        update_server_status(server_id, previous_message=combined_message)
-        
-        print("전역 크롤러 태스크 실행 중...")
-        print(combined_message)
-        await asyncio.sleep(30)
+            for server_id, status in server_status.items():
+                if status.get('alarm_active'):
+                    channel_id = status.get('last_channel_id')
+                    previous_message = status.get('previous_message', '')
+                    if channel_id and previous_message != combined_message:
+                        channel = bot.get_channel(int(channel_id))
+                        if channel:
+                            await channel.send(combined_message)
+                            update_server_status(server_id, previous_message=combined_message)
+            
+            print("전역 크롤러 태스크 실행 중...")
+            print(combined_message)
+            await asyncio.sleep(30)
+
+        except requests.RequestException as e:
+            print(f"HTTP 요청 중 에러 발생: {e}")
+            await asyncio.sleep(30)  # 네트워크 문제 해결 시간을 위한 대기
+            continue  # 다음 주기로 넘어감
+
+        except Exception as e:
+            print(f"기타 에러 발생: {e}")
+            await asyncio.sleep(30)  # 일반적인 문제 해결 시간을 위한 대기
+            continue  # 다음 주기로 넘어감
 
 # 재고 확인 함수
 async def check_availability(server_guid, channel, send_message=True):
@@ -228,8 +239,5 @@ async def on_ready():
 @bot.event
 async def on_disconnect():
     print(f"We have been disconnected.")
-    for guild in bot.guilds:
-        server_guid = str(guild.id)
-        update_server_status(server_guid, alarm_active=False)
 
 bot.run(DISCORD_BOT_TOKEN)
