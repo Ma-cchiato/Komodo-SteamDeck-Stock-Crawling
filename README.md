@@ -10,7 +10,7 @@
 
 ### 설치 방법
 
-위 패키지들은 `pip`를 사용하여 쉽게 설치할 수 있습니다. 다음 명령어를 실행하세요:
+`pip`를 사용하여 패키지를 설치합니다.
 
 ```
 pip install discord py-cord bs4 requests fake_useragent
