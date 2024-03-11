@@ -1,4 +1,4 @@
-# Add the code below inside the OnBeforeRequest
+// Add the code below inside the OnBeforeRequest
 
 		if (oSession.hostname.ToLower() == "eapp.emart.com" && oSession.uriContains("/api/v1/search/item")) {
 			oSession.utilDecodeRequest();
@@ -6,6 +6,7 @@
 			var xlogKeyHeader = oSession.oRequest["xlog_key"];
 			if (xlogKeyHeader != null && xlogKeyHeader.Length > 0) {
 				// xlog_key 값이 존재하면 파일에 저장
+				// 12시간마다 최신화 필요
 				var logPath = "C:\\logs\\request_headers.txt";
 				var logContent = "xlog_key: " + xlogKeyHeader + "\r\n";
 				Fiddler.FiddlerApplication.Log.LogString(logContent); // Fiddler 로그에도 출력
