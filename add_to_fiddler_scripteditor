@@ -6,9 +6,9 @@
 			var xlogKeyHeader = oSession.oRequest["xlog_key"];
 			if (xlogKeyHeader != null && xlogKeyHeader.Length > 0) {
 				// xlog_key 값이 존재하면 파일에 저장
-				var logPath = "C:\\logs\\xlog_key.txt";
+				var logPath = "C:\\logs\\request_headers.txt";
 				var logContent = "xlog_key: " + xlogKeyHeader + "\r\n";
 				Fiddler.FiddlerApplication.Log.LogString(logContent); // Fiddler 로그에도 출력
-        System.IO.File.WriteAllText(logPath, logContent);
+                System.IO.File.WriteAllText(logPath, logContent);
 				}
 		}
