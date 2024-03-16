@@ -65,16 +65,6 @@ bot = commands.Bot(command_prefix="?", intents=intents)
 # 관리자의 USER_ID
 author_user_id = YOUR_USERID
 
-# 상품 페이지 URL 및 매핑 정보
-url = "https://steamdeck.komodo.jp/?lang=ko"
-product_mapping = {
-    "variation-89372": "Steam Deck LCD 256GB",
-    "variation-89365": "Steam Deck LCD 256GB",
-    "variation-301136": "Steam Deck OLED 512GB",
-    "variation-301131": "Steam Deck OLED 512GB",
-    "variation-301137": "Steam Deck OLED 1TB",
-    "variation-301132": "Steam Deck OLED 1TB"
-}
 # Komodo 상품 페이지 URL 및 매핑 정보
 url = "https://steamdeck.komodo.jp/?lang=ko"
 product_mapping = {
