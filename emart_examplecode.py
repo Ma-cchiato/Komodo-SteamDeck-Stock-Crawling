@@ -61,19 +61,20 @@ def structure_results(items, model):
             "storeName": item["name"],
             "model": model,
             "stockStatus": item["stockStatus"]
+            "stockQty": item.get("stockQty", "N/A")  # "stockQty"가 없는 경우 "N/A"로 처리
         }
         structured_data.append(structured_item)
     return structured_data
 
 # 512GB 모델 조회
 sku_code_512gb = '0814585022285'
-xlog_key_512gb = 'O244FmgT1ba9lBKGYZqqBlfurO4eotOfzbuGjWCEhHjGW/0pHneZfYSnuScagqiO|LoFKr0shdsjhQmkv55qHzg=='
+xlog_key_512gb = 'ENTER_YOUR_"xlog_key"' # 'O244FmgT1ba9lBKGYZqqBlfurO4eotOfzbuGjWCEhHjGW/0pHneZfYSnuScagqiO|LoFKr0shdsjhQmkv55qHzg=='
 referer_512gb = 'https://eapp.emart.com/webapp/product/stock?sku=0814585022285&searchKeyword=%EC%8A%A4%ED%8C%80%EB%8D%B1'
 all_items_512gb = check_stock_all_pages(sku_code_512gb, 'Z', 'E', 10, xlog_key_512gb, referer_512gb)
 
 # 1TB 모델 조회
 sku_code_1tb = '0814585022339'
-xlog_key_1tb = 'O244FmgT1ba9lBKGYZqqBlfurO4eotOfzbuGjWCEhHjGW/0pHneZfYSnuScagqiO|JBzYXoY2kDmqvn076BCDzQ=='
+xlog_key_1tb = 'ENTER_YOUR_"xlog_key"' # 'O244FmgT1ba9lBKGYZqqBlfurO4eotOfzbuGjWCEhHjGW/0pHneZfYSnuScagqiO|JBzYXoY2kDmqvn076BCDzQ=='
 referer_1tb = 'https://eapp.emart.com/webapp/product/stock?sku=0814585022339&searchKeyword=%EC%8A%A4%ED%8C%80%EB%8D%B1'
 all_items_1tb = check_stock_all_pages(sku_code_1tb, 'Z', 'E', 10, xlog_key_1tb, referer_1tb)
 
