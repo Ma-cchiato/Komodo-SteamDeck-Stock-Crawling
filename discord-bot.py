@@ -423,16 +423,17 @@ async def check_availability_periodic_emart():
                 changed_items = [
                     item for item in items
                     if item['stockStatus'] != 'NO_STOCK' and not any(
-                        p_item['storeNm'] == item['storeNm'] and p_item['stockStatus'] == item['stockStatus'] for p_item in previous_items)
+                        p_item['storeNm'] == item['storeNm'] and p_item['stockStatus'] != 'NO_STOCK' for p_item in previous_items)
                 ]
                 # 재고가 변경된 점포 목록
                 #logging.info(f"{changed_items}") 
                 if changed_items:
                     stock_changes[model] = changed_items
 
+            # 크롤링된 재고 상태 저장  
+            save_to_emart_json('emart_stock_status.json', all_items_data)
+            
             if stock_changes:
-                # 실제로 재고 상태가 변경된 경우에만 업데이트 파일 저장
-                save_to_emart_json('emart_stock_status.json', all_items_data)
 
                 # 서버 설정에 따라 메시지 발송
                 for server_id, status in load_server_status().items():
@@ -491,6 +492,8 @@ async def compose_stock_change_message(channel, stock_changes, model):
     # 마지막 페이지 전송
     if fields_added > 0:
         await channel.send(embed=embed)
+
+    logging.info(f"이마트 입고 알림 메시지 발송 완료")
     
 
 # 재고 확인 함수 코모도
