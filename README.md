@@ -18,4 +18,4 @@ pip install discord py-cord bs4 requests fake_useragent
 
 ## 디스코드 봇 초대 링크
 
-https://discord.com/api/oauth2/authorize?client_id=1179757090970026034&permissions=2048&scope=bot
+https://discord.com/application-directory/1179757090970026034
