@@ -78,6 +78,7 @@ product_mapping = {
 
 # xlog_key를 저장하고 관리하는 JSON 파일 이름
 XLOG_KEYS_FILE = 'xlog_keys.json'
+VERIFY_FILE = 'verify_xlog_key.txt'
 
 def load_xlog_keys():
     try:
@@ -108,6 +109,79 @@ sku_details = {
     }
 }
 
+async def validate_xlog_key(session):
+    async with aiohttp.ClientSession() as session:
+        details = sku_details['512GB']
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
+            'Content-Type': 'application/json',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'cors',
+            # verify_xlog_key.txt에서 xlog_key 읽기
+            'xlog_key': open('verify_xlog_key.txt', 'r').read().strip(),
+            'xlog_location': 'store',
+            'Sec-Fetch-Dest': 'empty',
+            'Referer': details['referer'],
+        }
+        base_url = 'https://eapp.emart.com/api/v1/search/item'
+        params = {
+            'skuCode': details['sku_code'],
+            'areaId': details['area_id'],
+            'storeType': details['store_type'],
+            'bookmarkYn': 'false',
+            'statusOpenYn': 'false',
+            'sortType': 'storeNm',
+            'page': 1,
+            'limit': details['limit']
+        }
+        try:
+            response = await fetch_emart_stock(session, base_url, headers, params)
+            # 데이터가 정상적으로 반환되었는지 확인
+            if response and response.get('data', {}).get('detailItems', []):
+                logging.info("xlog_key 검증 성공")
+                return True
+            else:
+                user = await bot.fetch_user(author_user_id)  # 사용자 객체를 가져옵니다.
+                if user:
+                    try:
+                        dm_channel = await user.create_dm()  # DM 채널을 생성합니다.
+                        await dm_channel.send(f"xlog_key 최신화 필요")  # DM으로 메시지를 보냅니다.
+                        logging.error(f"xlog_key 최신화 필요")
+                    except Exception as e:
+                        logging.error(f"Failed to send DM: {e}")
+                
+                logging.error("xlog_key 검증 실패")
+                return False
+        except Exception as e:
+            logging.error(f"Error during xlog_key validation: {e}")
+            return False
+
+async def update_xlog_key_from_verification_file():
+    async with aiohttp.ClientSession() as session:
+        validation_success = await validate_xlog_key(session)
+        if validation_success:
+            # verify_xlog_key.txt 읽기
+            with open(VERIFY_FILE, 'r') as vf:
+                new_xlog_key = vf.read().strip()
+            # xlog_keys.json 업데이트
+            xlog_keys = {"xlog_key": new_xlog_key}
+            with open(XLOG_KEYS_FILE, 'w') as xkf:
+                json.dump(xlog_keys, xkf, indent=4)
+            logging.info("xlog_keys.json 최신화 완료")
+        else:
+            logging.info("The xlog_key from verify_xlog_key.txt failed validation.")
+
+
+@tasks.loop(minutes=10)
+async def update_xlog_key_task():
+    try:
+        await update_xlog_key_from_verification_file()
+        logging.info("xlog_key 최신화 태스크 실행 중")
+    except Exception as e:
+        logging.error(f"Error occurred in update_xlog_key_task: {e}")
 
 # 서버 상태 JSON 파일 관련 함수
 def load_server_status():
@@ -179,6 +253,7 @@ async def register_xlog_key(ctx, key: Option(str, "xlog_key 값을 입력하세�
     xlog_keys['xlog_key'] = key
     save_xlog_keys(xlog_keys)
     await ctx.respond("xlog_key가 성공적으로 등록되었습니다.")
+
 
 # 기존 코드에서 xlog_key 값을 사용할 때 이 함수를 호출하여 값을 가져옵니다.
 def get_xlog_key():
@@ -345,6 +420,7 @@ async def check_availability_periodic_emart():
             logging.info("이마트 재고확인 반복 함수 호출됨")
             all_items_data = {}
             models = ['512GB', '1TB']
+            validation_failed = False  # xlog_key 검증 실패 플래그
             async with aiohttp.ClientSession() as session:
                 for model in models:
                     items = []
@@ -390,7 +466,7 @@ async def check_availability_periodic_emart():
                         page += 1
                         await asyncio.sleep(1)  # Be polite with the server's resources
 
-                    all_items_data[model] = items
+                    all_items_data[model] = items if not validation_failed else None
                     #logging.info(f"{all_items_data[model]}")
 
                     if all_items_data[model]:
@@ -430,8 +506,10 @@ async def check_availability_periodic_emart():
                 if changed_items:
                     stock_changes[model] = changed_items
 
-            # 크롤링된 재고 상태 저장  
-            save_to_emart_json('emart_stock_status.json', all_items_data)
+            if not validation_failed:  # xlog_key 검증에 실패하지 않았다면, 재고 상태 파일을 업데이트
+                save_to_emart_json('emart_stock_status.json', all_items_data)
+            else:
+                logging.error("xlog_key가 만료되었거나 유효하지 않습니다. 재고 상태 파일을 업데이트하지 않습니다.")
             
             if stock_changes:
 
@@ -492,7 +570,7 @@ async def compose_stock_change_message(channel, stock_changes, model):
     # 마지막 페이지 전송
     if fields_added > 0:
         await channel.send(embed=embed)
-
+    
     logging.info(f"이마트 입고 알림 메시지 발송 완료")
     
 
@@ -659,8 +737,12 @@ check_availability_task_emart = None
 @bot.event
 async def on_ready():
     global check_availability_task_komodo, check_availability_task_emart
-
+    
     logging.info(f'We have logged in as {bot.user}')
+
+    update_xlog_key_task.start()
+    logging.info('xlog_key Update Task Started')
+    asyncio.sleep(2)
 
     if not cleanup_server_status.is_running():
         cleanup_server_status.start()
